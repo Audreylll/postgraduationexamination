@@ -15,6 +15,18 @@
     });
   });
   const exams = {...(window.HISTORICAL_EXAMS || {}), ...(window.DOCX_EXAMS || {}), "2025": {year: 2025, sections: data.sections, source: "2025年全国硕士研究生招生考试英语（一）试题"}};
+  Object.entries(window.PARAGRAPH_TRANSLATIONS || {}).forEach(([year, sections]) => {
+    const exam = exams[year];
+    if (!exam) return;
+    Object.entries(sections).forEach(([sectionIndex, paragraphs]) => {
+      const section = exam.sections?.[Number(sectionIndex)];
+      if (!section) return;
+      Object.entries(paragraphs).forEach(([paragraphIndex, translation]) => {
+        const paragraph = section.paragraphs?.[Number(paragraphIndex)];
+        if (paragraph?.en && !paragraph.zh && translation) paragraph.zh = translation;
+      });
+    });
+  });
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const paper = $("#paper");
@@ -178,13 +190,22 @@
     return entry?.senses?.map(item => item.meaning).filter(Boolean).join("；") || "";
   }
 
+  function compactContextMeaning(value = "", limit = 3) {
+    const parts = String(value)
+      .replace(/[\r\n]+/g, " ")
+      .split(/[；;，,]/)
+      .map(item => item.trim())
+      .filter(Boolean);
+    return [...new Set(parts)].slice(0, limit).join("；");
+  }
+
   function lookup(word, local = {}) {
     const raw = normalizeWord(word);
     if (!raw) return "";
-    if (local[raw]) return local[raw];
-    if (data.glossary[raw]) return data.glossary[raw];
+    if (local[raw]) return compactContextMeaning(local[raw]);
+    if (data.glossary[raw]) return compactContextMeaning(data.glossary[raw]);
     const directEntry = getOfflineEntry(raw);
-    if (entryChinese(directEntry)) return entryChinese(directEntry);
+    if (entryChinese(directEntry)) return compactContextMeaning(entryChinese(directEntry), 1);
     const candidates = [];
     if (raw.endsWith("'s")) candidates.push(raw.slice(0, -2));
     if (raw.endsWith("ies")) candidates.push(raw.slice(0, -3) + "y");
@@ -193,10 +214,10 @@
     if (raw.endsWith("ing")) candidates.push(raw.slice(0, -3), raw.slice(0, -3) + "e");
     if (raw.endsWith("ed")) candidates.push(raw.slice(0, -2), raw.slice(0, -1));
     for (const key of candidates) {
-      if (local[key]) return local[key];
-      if (data.glossary[key]) return data.glossary[key];
+      if (local[key]) return compactContextMeaning(local[key]);
+      if (data.glossary[key]) return compactContextMeaning(data.glossary[key]);
       const entry = getOfflineEntry(key);
-      if (entryChinese(entry)) return entryChinese(entry);
+      if (entryChinese(entry)) return compactContextMeaning(entryChinese(entry), 1);
     }
     return "";
   }
@@ -418,15 +439,23 @@
     </section>`;
   }
 
+  function stripEmbeddedClozeOptions(text = "") {
+    return String(text).replace(/\s+1\s*[.．、]\s*\[\s*A\s*\][\s\S]*$/i, "").trim();
+  }
+
   function renderCloze(section, cloze) {
     let html = "";
     if (cloze.sourcePages?.length) {
       html += `<p class="scan-notice">本年份完形采用真题原页，选项顺序与 PDF 完全一致。</p><div class="scan-stack">${cloze.sourcePages.map((page, i) => `<img class="scan-page" src="${escapeHtml(page)}" alt="${currentYear} 年完形填空第 ${i + 1} 页" loading="lazy">`).join("")}</div>`;
     } else {
-      const paragraphs = section.paragraphs || [];
+      const paragraphs = (section.paragraphs || []).map(paragraph => ({
+        ...paragraph,
+        en: stripEmbeddedClozeOptions(paragraph.en),
+        zh: stripEmbeddedClozeOptions(paragraph.zh)
+      })).filter(paragraph => paragraph.en);
       const optionGlossary = (window.CLOZE_TRANSLATIONS || {})[currentYear] || {};
       const passage = cloze.passage || paragraphs.map(item => item.en).join(" ");
-      if (paragraphs.length && !cloze.passage) {
+      if (paragraphs.length) {
         html += `<div class="cloze-passage passage">${paragraphs.map((paragraph, i) => {
           const enriched = {...paragraph, gloss: {...optionGlossary, ...(paragraph.gloss || {})}};
           return `<article class="para-block"><div class="english-line">${renderWords(paragraph.en, enriched, `${currentYear} · 完形填空`)}</div>${paragraph.zh ? `<p class="translation"><strong>第${i + 1}段译文：</strong>${escapeHtml(paragraph.zh)}</p>` : ""}${renderParagraphUsage(enriched)}${renderSyntaxTools(paragraph)}</article>`;
