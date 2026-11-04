@@ -576,7 +576,7 @@
       button.innerHTML = `${escapeHtml(section.nav)} <span>${String(index + 1).padStart(2, "0")}</span>`;
       button.addEventListener("click", () => {
         renderSection(index);
-        $("#sidebar").classList.remove("open");
+        closeCompactPanels();
       });
       nav.appendChild(button);
     });
@@ -1160,6 +1160,32 @@
     $("#progressValue").textContent = `${Math.round(passed / total * 100)}%`;
   }
 
+  function syncCompactPanels() {
+    const menuOpen = $("#sidebar").classList.contains("open");
+    const toolsOpen = $("#topActions").classList.contains("open");
+    const vocabOpen = $("#vocabPanel").classList.contains("open");
+    $("#menuButton").setAttribute("aria-expanded", String(menuOpen));
+    $("#toolsButton").setAttribute("aria-expanded", String(toolsOpen));
+    $("#vocabButton").setAttribute("aria-expanded", String(vocabOpen));
+    $("#drawerBackdrop").classList.toggle("open", menuOpen || toolsOpen || vocabOpen);
+  }
+
+  function closeCompactPanels(except = "") {
+    if (except !== "menu") $("#sidebar").classList.remove("open");
+    if (except !== "tools") $("#topActions").classList.remove("open");
+    if (except !== "vocab") $("#vocabPanel").classList.remove("open");
+    syncCompactPanels();
+  }
+
+  function toggleCompactPanel(name) {
+    const selectors = {menu: "#sidebar", tools: "#topActions", vocab: "#vocabPanel"};
+    const panel = $(selectors[name]);
+    const shouldOpen = !panel.classList.contains("open");
+    closeCompactPanels(name);
+    panel.classList.toggle("open", shouldOpen);
+    syncCompactPanels();
+  }
+
   buildYearPicker();
   buildNav();
   renderVocabulary();
@@ -1358,12 +1384,28 @@
     if (event.target === modal) closeModal(modal.id);
   }));
   document.addEventListener("keydown", event => {
-    if (event.key === "Escape") $$(".modal.open").forEach(modal => closeModal(modal.id));
+    if (event.key === "Escape") {
+      $$(".modal.open").forEach(modal => closeModal(modal.id));
+      closeCompactPanels();
+    }
   });
   $("#prevButton").addEventListener("click", () => sectionIndex > 0 && renderSection(sectionIndex - 1));
   $("#nextButton").addEventListener("click", () => sectionIndex < currentExam.sections.length - 1 && renderSection(sectionIndex + 1));
   $("#yearSelect").addEventListener("change", event => switchYear(event.target.value));
-  $("#menuButton").addEventListener("click", () => $("#sidebar").classList.toggle("open"));
+  $("#menuButton").setAttribute("aria-expanded", "false");
+  $("#menuButton").addEventListener("click", () => toggleCompactPanel("menu"));
+  $("#toolsButton").addEventListener("click", () => toggleCompactPanel("tools"));
+  $("#vocabButton").addEventListener("click", () => toggleCompactPanel("vocab"));
+  $("#drawerBackdrop").addEventListener("click", () => closeCompactPanels());
+  $("#topActions").addEventListener("click", event => {
+    if (event.target.closest("#studyButton, #exportButton")) closeCompactPanels();
+  });
+  $("#vocabPanel").addEventListener("click", event => {
+    if (event.target.closest("#dictationButton, #readAloudButton")) closeCompactPanels();
+  });
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 1180) closeCompactPanels();
+  });
   window.addEventListener("scroll", updateProgress, {passive:true});
   window.addEventListener("hashchange", () => {
     const match = location.hash.match(/#(20\d{2})-section-(\d+)/);

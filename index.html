@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="2010—2025考研英语一真题精读、逐词朗读与生词默写">
   <title>研词｜2010—2025 考研英语一真题精读</title>
-  <link rel="stylesheet" href="styles.css?v=20261104-4">
+  <link rel="stylesheet" href="styles.css?v=20261104-8">
 </head>
 <body>
   <header class="topbar">
@@ -14,7 +14,11 @@
       <span class="brand-mark">研</span>
       <span><strong>研词</strong><small>真题精读</small></span>
     </a>
-    <div class="top-actions">
+    <div class="compact-actions">
+      <button class="compact-tool-button" id="toolsButton" aria-expanded="false" aria-controls="topActions">功能</button>
+      <button class="compact-tool-button" id="vocabButton" aria-expanded="false" aria-controls="vocabPanel">生词</button>
+    </div>
+    <div class="top-actions" id="topActions">
       <label class="year-picker" for="yearSelect"><span>年份</span><select id="yearSelect" aria-label="选择真题年份"></select></label>
       <button class="control-button" id="toggleGloss">词义 <span>开</span></button>
       <button class="control-button" id="toggleTranslation">段译 <span>开</span></button>
@@ -24,6 +28,7 @@
       <button class="primary-button" id="exportButton">导出生词默写 PDF</button>
     </div>
   </header>
+  <button class="drawer-backdrop" id="drawerBackdrop" aria-label="关闭已打开的面板"></button>
 
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
@@ -206,6 +211,6 @@
   <script src="offline-dictionary.js?v=20261104-4"></script>
   <script src="supplement-data.js"></script>
   <script src="supplement-patches.js?v=20261104-4"></script>
-  <script src="app.js?v=20261104-7"></script>
+  <script src="app.js?v=20261104-8"></script>
 </body>
 </html>
