@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="2010—2025考研英语一真题精读、逐词朗读与生词默写">
   <title>研词｜2010—2025 考研英语一真题精读</title>
-  <link rel="stylesheet" href="styles.css?v=20261104-8">
+  <link rel="stylesheet" href="styles.css?v=20261107-1">
 </head>
 <body>
   <header class="topbar">
@@ -20,6 +20,13 @@
     </div>
     <div class="top-actions" id="topActions">
       <label class="year-picker" for="yearSelect"><span>年份</span><select id="yearSelect" aria-label="选择真题年份"></select></label>
+      <div class="reading-settings" role="group" aria-label="阅读字号">
+        <span>字号</span>
+        <button type="button" id="fontDecrease" aria-label="缩小阅读字体">−</button>
+        <output id="fontSizeValue" aria-live="polite">标准</output>
+        <button type="button" id="fontIncrease" aria-label="放大阅读字体">＋</button>
+      </div>
+      <button class="control-button" id="toggleTheme" type="button" aria-pressed="false">夜间 <span>关</span></button>
       <button class="control-button" id="toggleGloss">词义 <span>开</span></button>
       <button class="control-button" id="toggleTranslation">段译 <span>开</span></button>
       <button class="control-button" id="toggleParagraphUsage">段落搭配 <span>关</span></button>
@@ -211,6 +218,6 @@
   <script src="offline-dictionary.js?v=20261104-4"></script>
   <script src="supplement-data.js"></script>
   <script src="supplement-patches.js?v=20261104-4"></script>
-  <script src="app.js?v=20261104-8"></script>
+  <script src="app.js?v=20261107-1"></script>
 </body>
 </html>

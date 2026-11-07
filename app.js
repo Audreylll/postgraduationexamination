@@ -36,6 +36,7 @@
   const phoneticStorageKey = "yanci-phonetic-cache";
   const dictionaryStorageKey = "yanci-dictionary-cache-v4";
   const sentenceTranslationStorageKey = "yanci-sentence-translation-cache";
+  const readingPreferencesStorageKey = "yanci-reading-preferences";
   const studyIntervals = [0, 1, 2, 4, 7, 15, 30].map(days => days * 86400000);
   const autoKeyWords = new Set(`abstractly inevitable accumulation associated decline possibility lifestyle immunity excess attributable aerobic mediterranean processed justify fares grimly ritual imposing burden inflation successive subsidise commute stockbroker travails infrastructure trumpeting substantial compensation disruption pledged indefinitely cramped incompetently nationalisation vengeance deforestation turnaround antipoverty conditional inequality alleviation degradation causality instituted tropical satellite makeshift inclement harvests transferability commonalities historian reevaluate preoccupied ancestors prudery portraiture sitters stiffly absently exposure notoriously daguerreotype limbs contemplate instantaneous spontaneous dignity cheesy maxim dentistry hygiene toothy gnashers tramps damning broadband advocates incentive affiliated lifeblood pushback regulatory resolution neutrality eliminated authority conglomerate expense imposed caps unanimously upheld deregulating concurring unhinged intervene anachronism preempt undermine abdication meddling sinister upend automation impending unconscious bias analytics optimize outperform premiums assess watershed enrollment fascism expansion manifests proportion peculiar governance socialization faculty predominantly postgraduate norms apprenticeship empowerment caravanserais roadside inns enclosed pilgrims merchant restoration thieves subjected strategically informal commodities wares ruins sympathises sector resisting standards panic dispute dismiss misguided strategist policymakers curricula prominent consensus slanted sponsored regulate rentals inventory urgency developers swaths vacancy unchecked legislature coalition affordable cyclical crux bypass mandates levy registration retailer thriller standoff credit retiring spokesperson availability stock surpassed midlist merger unaligned bidding advances conformity concentration cartels agencies clout negotiate consolidating plurality casualty recordkeepers perceived citations accumulates prestige conspire inflate algorithm suspicious disproportionately predatory consultancies contributors outlets accrue insidious rampant criterion malpractice oblige renowned landscape iconic expedition basin meteorologist zoologist mineralogist preserving exploiting settlers conservation magnificence vivid capitalize reproductions visualization collodion portable darkroom crude majestic portraits traversed flora fauna entourage astounding legislation designation preferences celebrities emotionally subsequent interpersonal creativity narrative simulate accessible regulated automated restricted nonintrusive banners frequency sensitive critical`.split(/\s+/));
   const examPhrases = ["have to do with", "levels out", "be associated with", "be attributable to", "as the years went by", "on the grounds that", "bear the cost", "with a vengeance", "in short order", "break the cycle of", "be correlated with", "cause and effect", "regardless of", "make up", "allude to", "at the expense of", "in the wake of", "once and for all", "in relation to", "cut down on", "give rise to", "place strains on", "as well as", "apart from", "instead of", "such as", "along with", "so that", "even if", "in case", "as a result", "with regard to", "in spite of", "in line with", "stock up on", "take off", "buy up", "make money off", "rein in", "do one's utmost", "rely on", "in terms of", "take on", "steer clear of", "rather than", "capitalize on", "in quick succession", "play a key role", "put out", "lead to"];
@@ -126,6 +127,32 @@
   let readingPosition = 0;
   let readingActive = false;
   let drawing = false;
+  const fontScaleSteps = [0.9, 1, 1.1, 1.2, 1.3];
+  const fontScaleLabels = ["较小", "标准", "较大", "大", "特大"];
+  let readingPreferences = loadJson(readingPreferencesStorageKey);
+  let fontScaleIndex = Math.max(0, fontScaleSteps.indexOf(Number(readingPreferences.fontScale)));
+  if (!fontScaleSteps.includes(Number(readingPreferences.fontScale))) fontScaleIndex = 1;
+  let darkTheme = readingPreferences.theme === "dark";
+
+  function applyReadingPreferences(shouldSave = false) {
+    const scale = fontScaleSteps[fontScaleIndex];
+    document.documentElement.style.setProperty("--reading-scale", String(scale));
+    document.documentElement.dataset.theme = darkTheme ? "dark" : "light";
+    $("#fontSizeValue").textContent = fontScaleLabels[fontScaleIndex];
+    $("#fontDecrease").disabled = fontScaleIndex === 0;
+    $("#fontIncrease").disabled = fontScaleIndex === fontScaleSteps.length - 1;
+    const themeButton = $("#toggleTheme");
+    $("span", themeButton).textContent = darkTheme ? "开" : "关";
+    themeButton.setAttribute("aria-pressed", String(darkTheme));
+    themeButton.setAttribute("aria-label", darkTheme ? "切换到日间模式" : "切换到夜间模式");
+    if (shouldSave) {
+      readingPreferences = {fontScale: scale, theme: darkTheme ? "dark" : "light"};
+      try { localStorage.setItem(readingPreferencesStorageKey, JSON.stringify(readingPreferences)); }
+      catch { /* 隐私模式下仍保持本次设置 */ }
+    }
+  }
+
+  applyReadingPreferences();
 
   function escapeHtml(value = "") {
     return String(value).replace(/[&<>'"]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));
@@ -1266,6 +1293,18 @@
     glossVisible = !glossVisible;
     paper.classList.toggle("hide-gloss", !glossVisible);
     $("span", event.currentTarget).textContent = glossVisible ? "开" : "关";
+  });
+  $("#fontDecrease").addEventListener("click", () => {
+    if (fontScaleIndex > 0) fontScaleIndex -= 1;
+    applyReadingPreferences(true);
+  });
+  $("#fontIncrease").addEventListener("click", () => {
+    if (fontScaleIndex < fontScaleSteps.length - 1) fontScaleIndex += 1;
+    applyReadingPreferences(true);
+  });
+  $("#toggleTheme").addEventListener("click", () => {
+    darkTheme = !darkTheme;
+    applyReadingPreferences(true);
   });
   $("#toggleTranslation").addEventListener("click", event => {
     translationVisible = !translationVisible;
